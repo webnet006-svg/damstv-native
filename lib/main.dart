@@ -50,14 +50,15 @@ class Channel {
 class DamsTvApp extends StatelessWidget {
   const DamsTvApp({super.key});
 
-  static const Color bgDark = Color(0xFF060B18);
-  static const Color surfaceDark = Color(0xFF151B28);
-  static const Color surfaceCard = Color(0xFF1E2636);
-  static const Color primaryBlue = Color(0xFF2F6BFF);
-  static const Color accentCyan = Color(0xFF22D3EE);
-  static const Color textLight = Color(0xFFF1F5F9);
-  static const Color textMuted = Color(0xFF8B97AD);
-  static const Color borderDark = Color(0xFF26304A);
+  // Couleurs exactes du projet web DAMS TV v2.2
+  static const Color cBackground = Color(0xFF060B18); // #060b18 (bleu très sombre)
+  static const Color cSurface = Color(0xFF151B28); // #151b28 (surface barres & cartes)
+  static const Color cSurface2 = Color(0xFF1E2636); // #1e2636 (surface secondaire)
+  static const Color cPrimary = Color(0xFF2F6BFF); // #2f6bff (bleu bouton)
+  static const Color cCyan = Color(0xFF22D3EE); // #22d3ee (cyan accent & actif)
+  static const Color cText = Color(0xFFF1F5F9); // #f1f5f9 (texte blanc cassé)
+  static const Color cMuted = Color(0xFF8B97AD); // #8b97ad (texte gris)
+  static const Color cBorder = Color(0xFF26304A); // #26304a (lignes & bordures)
 
   @override
   Widget build(BuildContext context) {
@@ -67,21 +68,21 @@ class DamsTvApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: bgDark,
-        primaryColor: accentCyan,
+        scaffoldBackgroundColor: cBackground,
+        primaryColor: cCyan,
         colorScheme: const ColorScheme.dark(
-          primary: accentCyan,
-          secondary: primaryBlue,
-          surface: surfaceDark,
-          background: bgDark,
-          onPrimary: bgDark,
+          primary: cCyan,
+          secondary: cPrimary,
+          surface: cSurface,
+          background: cBackground,
+          onPrimary: cBackground,
           onSecondary: Colors.white,
-          onSurface: textLight,
-          onBackground: textLight,
+          onSurface: cText,
+          onBackground: cText,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0B1220),
-          foregroundColor: textLight,
+          backgroundColor: cSurface,
+          foregroundColor: cText,
           elevation: 0,
           surfaceTintColor: Colors.transparent,
           systemOverlayStyle: SystemUiOverlayStyle(
@@ -90,39 +91,13 @@ class DamsTvApp extends StatelessWidget {
           ),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: surfaceDark,
-          selectedItemColor: accentCyan,
-          unselectedItemColor: textMuted,
+          backgroundColor: cSurface,
+          selectedItemColor: cCyan,
+          unselectedItemColor: cMuted,
           selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: TextStyle(fontSize: 11),
           type: BottomNavigationBarType.fixed,
-          elevation: 8,
-        ),
-        cardTheme: CardTheme(
-          color: surfaceDark,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: borderDark, width: 1),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: surfaceDark,
-          hintStyle: const TextStyle(color: textMuted, fontSize: 14),
-          prefixIconColor: accentCyan,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: borderDark),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: borderDark),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: accentCyan, width: 1.5),
-          ),
         ),
       ),
       home: const MainNavigationScreen(),
@@ -141,7 +116,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
   final Map<String, Channel> _favorites = {};
 
-  // Contrôleurs & données onglet TV
+  // Données et contrôleurs onglet TV
   final TextEditingController _urlController = TextEditingController();
   final TextEditingController _tvSearchController = TextEditingController();
   bool _isLoadingTv = false;
@@ -150,16 +125,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   List<Channel> _filteredTvChannels = [];
   bool _showM3uPanel = true;
 
-  // Contrôleurs & données onglet Radio
+  // Données et contrôleurs onglet Radio
   final TextEditingController _radioSearchController = TextEditingController();
   bool _isLoadingRadio = false;
-  String? _radioErrorMessage;
   List<Channel> _allRadios = [];
   List<Channel> _filteredRadios = [];
-  String _radioFilter = 'top'; // 'top', 'fr', 'afrique'
+  String _radioFilter = 'top';
 
-  // Filtre Favoris
-  String _favFilter = 'all'; // 'all', 'tv', 'radio'
+  // Filtres onglet Favoris
+  String _favFilter = 'all';
 
   @override
   void initState() {
@@ -178,12 +152,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.dispose();
   }
 
-  /// Chargement des favoris et de la dernière playlist stockés dans SharedPreferences
+  /* ================= PERSISTANCE AVEC SHARED_PREFERENCES ================= */
+
   Future<void> _loadStoredData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      // Charger les favoris
+      // Charger les favoris permanents
       final favsString = prefs.getString('damstv_favorites');
       if (favsString != null && favsString.isNotEmpty) {
         final List<dynamic> decoded = jsonDecode(favsString);
@@ -201,7 +176,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         _urlController.text = lastUrl;
       }
 
-      // Charger le cache des chaînes TV
+      // Charger les chaînes TV mises en cache
       final cachedChannels = prefs.getString('damstv_cached_channels');
       if (cachedChannels != null && cachedChannels.isNotEmpty) {
         final List<dynamic> decodedChannels = jsonDecode(cachedChannels);
@@ -219,7 +194,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     } catch (_) {}
   }
 
-  /// Sauvegarde des favoris dans SharedPreferences
   Future<void> _saveFavorites() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -228,7 +202,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     } catch (_) {}
   }
 
-  /// Basculer l'état de favori pour une chaîne / radio
   void _toggleFavorite(Channel channel) {
     setState(() {
       if (_favorites.containsKey(channel.url)) {
@@ -257,7 +230,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   bool _isFavorite(Channel channel) => _favorites.containsKey(channel.url);
 
-  /* ================= GESTION TV & M3U ================= */
+  /* ================= PARSEUR ET TÉLÉCHARGEMENT M3U ================= */
 
   void _filterTvChannels() {
     final query = _tvSearchController.text.toLowerCase().trim();
@@ -373,7 +346,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             _showM3uPanel = false;
           });
 
-          // Enregistrer en cache local
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('damstv_last_m3u_url', rawUrl);
           await prefs.setString(
@@ -429,7 +401,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _fetchDefaultRadios() async {
     setState(() {
       _isLoadingRadio = true;
-      _radioErrorMessage = null;
     });
 
     final radioServers = [
@@ -487,7 +458,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     if (!success && mounted) {
-      // Liste de secours des radios francophones principales
       final fallbackRadios = [
         Channel(name: 'France Inter', url: 'https://stream.radiofrance.fr/franceinter/franceinter_hifi.m3u8', group: 'France • Actualités', isRadio: true),
         Channel(name: 'France Info', url: 'https://stream.radiofrance.fr/franceinfo/franceinfo_hifi.m3u8', group: 'France • Information', isRadio: true),
@@ -508,8 +478,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
-  /* ================= NAVIGATION & LECTURE ================= */
-
   void _openPlayer(Channel channel) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -525,6 +493,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: DamsTvApp.cBackground,
       appBar: AppBar(
         title: Row(
           children: [
@@ -534,23 +503,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                  color: DamsTvApp.cText,
                   letterSpacing: -0.5,
                 ),
                 children: [
                   WidgetSpan(
                     alignment: PlaceholderAlignment.middle,
                     child: Padding(
-                      padding: EdgeInsets.only(left: 5),
+                      padding: EdgeInsets.only(left: 6),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Color(0xFF2F6BFF), Color(0xFF22D3EE)],
+                            colors: [DamsTvApp.cPrimary, DamsTvApp.cCyan],
                           ),
                           borderRadius: BorderRadius.all(Radius.circular(6)),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                           child: Text(
                             'TV',
                             style: TextStyle(
@@ -572,16 +541,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           if (_currentIndex == 0)
             IconButton(
               icon: Icon(
-                _showM3uPanel ? Icons.expand_less : Icons.add_link,
-                color: const Color(0xFF22D3EE),
+                _showM3uPanel ? Icons.expand_less_rounded : Icons.add_link_rounded,
+                color: DamsTvApp.cCyan,
               ),
-              tooltip: _showM3uPanel ? 'Masquer URL M3U' : 'Charger URL M3U',
+              tooltip: _showM3uPanel ? 'Masquer URL' : 'Ajouter playlist M3U',
               onPressed: () => setState(() => _showM3uPanel = !_showM3uPanel),
             ),
           if (_currentIndex == 1)
             IconButton(
-              icon: const Icon(Icons.refresh, color: Color(0xFF22D3EE)),
-              tooltip: 'Actualiser les radios',
+              icon: const Icon(Icons.refresh_rounded, color: DamsTvApp.cCyan),
+              tooltip: 'Actualiser',
               onPressed: _fetchDefaultRadios,
             ),
           const SizedBox(width: 8),
@@ -597,28 +566,32 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFF26304A), width: 1)),
+          color: DamsTvApp.cSurface,
+          border: Border(
+            top: BorderSide(color: DamsTvApp.cBorder, width: 1),
+          ),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          items: [
-            const BottomNavigationBarItem(
+          backgroundColor: DamsTvApp.cSurface,
+          selectedItemColor: DamsTvApp.cCyan,
+          unselectedItemColor: DamsTvApp.cMuted,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(fontSize: 11),
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
               icon: Icon(Icons.live_tv_rounded),
               label: 'TV',
             ),
-            const BottomNavigationBarItem(
+            BottomNavigationBarItem(
               icon: Icon(Icons.radio_rounded),
               label: 'Radio',
             ),
             BottomNavigationBarItem(
-              icon: Badge(
-                isLabelVisible: _favorites.isNotEmpty,
-                label: Text('${_favorites.length}'),
-                backgroundColor: const Color(0xFF22D3EE),
-                textColor: const Color(0xFF060B18),
-                child: const Icon(Icons.favorite_rounded),
-              ),
+              icon: Icon(Icons.favorite_rounded),
               label: 'Favoris',
             ),
           ],
@@ -627,44 +600,61 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  /* ================= WIDGETS ONGLET TV ================= */
+  /* ================= ONGLET 1: TV ================= */
 
   Widget _buildTvTab() {
     return Column(
       children: [
+        // Champ de texte en haut avec le bouton "Télécharger la playlist"
         if (_showM3uPanel)
           Container(
+            margin: const EdgeInsets.fromLTRB(14, 10, 14, 6),
             padding: const EdgeInsets.all(14),
-            margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF151B28),
+              color: DamsTvApp.cSurface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF26304A)),
+              border: Border.all(color: DamsTvApp.cBorder, width: 1),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
                   controller: _urlController,
+                  style: const TextStyle(color: DamsTvApp.cText),
                   decoration: InputDecoration(
                     labelText: 'URL de la playlist M3U',
-                    labelStyle: const TextStyle(color: Color(0xFF8B97AD)),
+                    labelStyle: const TextStyle(color: DamsTvApp.cMuted),
                     hintText: 'https://exemple.com/playlist.m3u',
-                    prefixIcon: const Icon(Icons.link, color: Color(0xFF22D3EE)),
+                    hintStyle: TextStyle(color: DamsTvApp.cMuted.withOpacity(0.6)),
+                    prefixIcon: const Icon(Icons.link_rounded, color: DamsTvApp.cCyan),
                     suffixIcon: _urlController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
+                            icon: const Icon(Icons.clear, size: 20, color: DamsTvApp.cMuted),
                             onPressed: () {
                               _urlController.clear();
                               setState(() {});
                             },
                           )
                         : null,
+                    filled: true,
+                    fillColor: DamsTvApp.cSurface2,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: DamsTvApp.cBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: DamsTvApp.cBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: DamsTvApp.cCyan, width: 1.5),
+                    ),
                   ),
                   keyboardType: TextInputType.url,
                   onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 ElevatedButton.icon(
                   onPressed: _isLoadingTv ? null : _fetchPlaylist,
                   icon: _isLoadingTv
@@ -673,23 +663,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Color(0xFF060B18),
+                            color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.download_rounded, color: Color(0xFF060B18)),
+                      : const Icon(Icons.download_rounded, color: Colors.white),
                   label: Text(
                     _isLoadingTv ? 'Téléchargement...' : 'Télécharger la playlist',
                     style: const TextStyle(
-                      color: Color(0xFF060B18),
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF22D3EE),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    backgroundColor: DamsTvApp.cPrimary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 0,
                   ),
                 ),
               ],
@@ -700,18 +693,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red.shade900.withOpacity(0.4),
+              color: Colors.red.shade900.withOpacity(0.35),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.redAccent.shade400),
+              border: Border.all(color: Colors.redAccent),
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.redAccent),
+                const Icon(Icons.error_outline_rounded, color: Colors.redAccent),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     _tvErrorMessage!,
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    style: const TextStyle(color: DamsTvApp.cText, fontSize: 13),
                   ),
                 ),
               ],
@@ -725,12 +718,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 Expanded(
                   child: TextField(
                     controller: _tvSearchController,
+                    style: const TextStyle(color: DamsTvApp.cText, fontSize: 14),
                     decoration: InputDecoration(
-                      hintText: 'Rechercher une chaîne ou un groupe...',
-                      prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF22D3EE)),
+                      hintText: 'Rechercher une chaîne...',
+                      hintStyle: const TextStyle(color: DamsTvApp.cMuted),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 20, color: DamsTvApp.cCyan),
                       suffixIcon: _tvSearchController.text.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
+                              icon: const Icon(Icons.clear, size: 18, color: DamsTvApp.cMuted),
                               onPressed: () {
                                 _tvSearchController.clear();
                                 setState(() {});
@@ -739,6 +734,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           : null,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      filled: true,
+                      fillColor: DamsTvApp.cSurface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: DamsTvApp.cBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: DamsTvApp.cBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: DamsTvApp.cCyan),
+                      ),
                     ),
                   ),
                 ),
@@ -746,26 +755,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E2636),
+                    color: DamsTvApp.cSurface,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF26304A)),
+                    border: Border.all(color: DamsTvApp.cBorder),
                   ),
                   child: Text(
                     '${_filteredTvChannels.length} / ${_allTvChannels.length}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: Color(0xFF22D3EE),
+                      color: DamsTvApp.cCyan,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+        // Liste de cartes sombres
         Expanded(
           child: _isLoadingTv
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF22D3EE)),
+                  child: CircularProgressIndicator(color: DamsTvApp.cCyan),
                 )
               : _filteredTvChannels.isEmpty
                   ? Center(
@@ -773,27 +783,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            _allTvChannels.isEmpty ? Icons.live_tv_rounded : Icons.search_off,
-                            size: 60,
-                            color: const Color(0xFF8B97AD).withOpacity(0.6),
+                            _allTvChannels.isEmpty ? Icons.live_tv_rounded : Icons.search_off_rounded,
+                            size: 64,
+                            color: DamsTvApp.cMuted.withOpacity(0.5),
                           ),
                           const SizedBox(height: 12),
                           Text(
                             _allTvChannels.isEmpty
-                                ? 'Téléchargez une playlist M3U pour commencer'
-                                : 'Aucune chaîne trouvée',
-                            style: const TextStyle(color: Color(0xFF8B97AD)),
+                                ? 'Téléchargez une playlist M3U pour charger les chaînes'
+                                : 'Aucune chaîne ne correspond à la recherche',
+                            style: const TextStyle(color: DamsTvApp.cMuted),
                           ),
                         ],
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       itemCount: _filteredTvChannels.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
                       itemBuilder: (context, index) {
                         final channel = _filteredTvChannels[index];
-                        return _buildChannelTile(channel);
+                        return _buildCardItem(channel);
                       },
                     ),
         ),
@@ -801,76 +810,83 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  /* ================= WIDGETS ONGLET RADIO ================= */
+  /* ================= ONGLET 2: RADIO ================= */
 
   Widget _buildRadioTab() {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _radioSearchController,
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher une radio...',
-                    prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF22D3EE)),
-                    suffixIcon: _radioSearchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              _radioSearchController.clear();
-                              setState(() {});
-                            },
-                          )
-                        : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                  ),
-                ),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+          child: TextField(
+            controller: _radioSearchController,
+            style: const TextStyle(color: DamsTvApp.cText, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Rechercher une radio...',
+              hintStyle: const TextStyle(color: DamsTvApp.cMuted),
+              prefixIcon: const Icon(Icons.search_rounded, size: 20, color: DamsTvApp.cCyan),
+              suffixIcon: _radioSearchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18, color: DamsTvApp.cMuted),
+                      onPressed: () {
+                        _radioSearchController.clear();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              filled: true,
+              fillColor: DamsTvApp.cSurface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: DamsTvApp.cBorder),
               ),
-            ],
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: DamsTvApp.cBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: DamsTvApp.cCyan),
+              ),
+            ),
           ),
         ),
-        // Filtres par catégorie de radio
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Row(
             children: [
-              _buildFilterChip('Populaires', 'top'),
+              _buildRadioChip('Populaires', 'top'),
               const SizedBox(width: 8),
-              _buildFilterChip('France', 'fr'),
+              _buildRadioChip('France', 'fr'),
               const SizedBox(width: 8),
-              _buildFilterChip('Afrique', 'afrique'),
+              _buildRadioChip('Afrique', 'afrique'),
             ],
           ),
         ),
-        const SizedBox(height: 4),
         Expanded(
           child: _isLoadingRadio
               ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF22D3EE)),
+                  child: CircularProgressIndicator(color: DamsTvApp.cCyan),
                 )
               : _filteredRadios.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.radio_rounded, size: 60, color: Color(0xFF8B97AD)),
+                          Icon(Icons.radio_rounded, size: 64, color: DamsTvApp.cMuted),
                           SizedBox(height: 12),
-                          Text('Aucune radio disponible', style: TextStyle(color: Color(0xFF8B97AD))),
+                          Text('Aucune radio trouvée', style: TextStyle(color: DamsTvApp.cMuted)),
                         ],
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       itemCount: _filteredRadios.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
                       itemBuilder: (context, index) {
                         final radio = _filteredRadios[index];
-                        return _buildChannelTile(radio);
+                        return _buildCardItem(radio);
                       },
                     ),
         ),
@@ -878,21 +894,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value) {
+  Widget _buildRadioChip(String label, String value) {
     final isSelected = _radioFilter == value;
     return ChoiceChip(
       label: Text(
         label,
         style: TextStyle(
-          color: isSelected ? const Color(0xFF060B18) : Colors.white,
+          color: isSelected ? DamsTvApp.cBackground : DamsTvApp.cText,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           fontSize: 12,
         ),
       ),
       selected: isSelected,
-      selectedColor: const Color(0xFF22D3EE),
-      backgroundColor: const Color(0xFF1E2636),
-      side: const BorderSide(color: Color(0xFF26304A)),
+      selectedColor: DamsTvApp.cCyan,
+      backgroundColor: DamsTvApp.cSurface,
+      side: const BorderSide(color: DamsTvApp.cBorder),
       onSelected: (selected) {
         if (selected) {
           setState(() {
@@ -904,33 +920,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildFavChip(String label, String value) {
-    final isSelected = _favFilter == value;
-    return ChoiceChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? const Color(0xFF060B18) : Colors.white,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 11,
-        ),
-      ),
-      selected: isSelected,
-      selectedColor: const Color(0xFF22D3EE),
-      backgroundColor: const Color(0xFF1E2636),
-      side: const BorderSide(color: Color(0xFF26304A)),
-      visualDensity: VisualDensity.compact,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _favFilter = value;
-          });
-        }
-      },
-    );
-  }
-
-  /* ================= WIDGETS ONGLET FAVORIS ================= */
+  /* ================= ONGLET 3: FAVORIS ================= */
 
   Widget _buildFavoritesTab() {
     final allFavList = _favorites.values.toList();
@@ -949,14 +939,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.favorite_rounded, color: Color(0xFF22D3EE), size: 22),
+                  const Icon(Icons.favorite_rounded, color: DamsTvApp.cCyan, size: 22),
                   const SizedBox(width: 8),
                   Text(
                     'Mes Favoris (${allFavList.length})',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: DamsTvApp.cText,
                     ),
                   ),
                 ],
@@ -980,36 +970,39 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
+                    children: const [
+                      Icon(
                         Icons.favorite_border_rounded,
                         size: 64,
-                        color: Color(0xFF8B97AD),
+                        color: DamsTvApp.cMuted,
                       ),
-                      const SizedBox(height: 14),
-                      const Text(
+                      SizedBox(height: 14),
+                      Text(
                         'Aucun favori enregistré',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: DamsTvApp.cText,
+                        ),
                       ),
-                      const SizedBox(height: 6),
-                      const Padding(
+                      SizedBox(height: 6),
+                      Padding(
                         padding: EdgeInsets.symmetric(horizontal: 40),
                         child: Text(
-                          'Touchez le cœur ♡ à côté d\'une chaîne ou d\'une radio pour la retrouver ici.',
+                          'Touchez le cœur sur une carte de chaîne ou de radio pour l\'ajouter aux favoris.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Color(0xFF8B97AD), fontSize: 13),
+                          style: TextStyle(color: DamsTvApp.cMuted, fontSize: 13),
                         ),
                       ),
                     ],
                   ),
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   itemCount: displayedFavs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 6),
                   itemBuilder: (context, index) {
                     final item = displayedFavs[index];
-                    return _buildChannelTile(item);
+                    return _buildCardItem(item);
                   },
                 ),
         ),
@@ -1017,95 +1010,149 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  /* ================= TILE CANAL / RADIO ================= */
+  Widget _buildFavChip(String label, String value) {
+    final isSelected = _favFilter == value;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? DamsTvApp.cBackground : DamsTvApp.cText,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 11,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: DamsTvApp.cCyan,
+      backgroundColor: DamsTvApp.cSurface,
+      side: const BorderSide(color: DamsTvApp.cBorder),
+      visualDensity: VisualDensity.compact,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _favFilter = value;
+          });
+        }
+      },
+    );
+  }
 
-  Widget _buildChannelTile(Channel channel) {
+  /* ================= CARTE SOMBRE (TV / RADIO) ================= */
+
+  Widget _buildCardItem(Channel channel) {
     final isFav = _isFavorite(channel);
 
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF151B28),
+        color: DamsTvApp.cSurface, // Surface #151b28
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF26304A)),
+        border: Border.all(color: DamsTvApp.cBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            offset: const Offset(0, 3),
+            blurRadius: 8,
+          ),
+        ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            width: 48,
-            height: 48,
-            color: const Color(0xFF1E2636),
-            child: channel.logo != null && channel.logo!.isNotEmpty
-                ? Image.network(
-                    channel.logo!,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      channel.isRadio ? Icons.radio_rounded : Icons.live_tv_rounded,
-                      color: const Color(0xFF22D3EE),
-                      size: 26,
-                    ),
-                  )
-                : Icon(
-                    channel.isRadio ? Icons.radio_rounded : Icons.live_tv_rounded,
-                    color: const Color(0xFF22D3EE),
-                    size: 26,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _openPlayer(channel),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                // Vignette logo
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    color: DamsTvApp.cSurface2,
+                    child: channel.logo != null && channel.logo!.isNotEmpty
+                        ? Image.network(
+                            channel.logo!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(
+                              channel.isRadio ? Icons.radio_rounded : Icons.live_tv_rounded,
+                              color: DamsTvApp.cCyan,
+                              size: 26,
+                            ),
+                          )
+                        : Icon(
+                            channel.isRadio ? Icons.radio_rounded : Icons.live_tv_rounded,
+                            color: DamsTvApp.cCyan,
+                            size: 26,
+                          ),
                   ),
-          ),
-        ),
-        title: Text(
-          channel.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            fontSize: 14,
-          ),
-        ),
-        subtitle: Text(
-          channel.group != null && channel.group!.isNotEmpty
-              ? channel.group!
-              : (channel.isRadio ? 'Radio' : 'TV Direct'),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xFF8B97AD),
-            fontSize: 12,
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Bouton Cœur Favori
-            IconButton(
-              icon: Icon(
-                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                color: isFav ? const Color(0xFF22D3EE) : const Color(0xFF8B97AD),
-                size: 24,
-              ),
-              tooltip: isFav ? 'Retirer des favoris' : 'Ajouter aux favoris',
-              onPressed: () => _toggleFavorite(channel),
+                ),
+                const SizedBox(width: 14),
+                // Nom de chaîne en blanc (#f1f5f9) & groupe en gris (#8b97ad)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        channel.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: DamsTvApp.cText, // Nom en blanc
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        (channel.group != null && channel.group!.isNotEmpty)
+                            ? channel.group!
+                            : (channel.isRadio ? 'Radio' : 'TV Direct'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: DamsTvApp.cMuted, // Groupe en gris
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Bouton Cœur pour ajouter aux favoris
+                IconButton(
+                  icon: Icon(
+                    isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: isFav ? DamsTvApp.cCyan : DamsTvApp.cMuted,
+                    size: 24,
+                  ),
+                  tooltip: isFav ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                  onPressed: () => _toggleFavorite(channel),
+                ),
+                // Icône "Play" cyan (#22d3ee) à droite
+                IconButton(
+                  icon: const Icon(
+                    Icons.play_circle_fill_rounded,
+                    color: DamsTvApp.cCyan, // Play cyan
+                    size: 36,
+                  ),
+                  tooltip: 'Regarder',
+                  onPressed: () => _openPlayer(channel),
+                ),
+              ],
             ),
-            // Bouton Lecture
-            IconButton(
-              icon: const Icon(
-                Icons.play_circle_fill_rounded,
-                color: Color(0xFF22D3EE),
-                size: 34,
-              ),
-              tooltip: 'Lire le flux',
-              onPressed: () => _openPlayer(channel),
-            ),
-          ],
+          ),
         ),
-        onTap: () => _openPlayer(channel),
       ),
     );
   }
 }
 
-/// Écran du lecteur VLC natif avec en-têtes User-Agent / Referer et gestion anti-403
+/// Écran du lecteur PlayerScreen avec VLC, en-têtes User-Agent/Referer,
+/// boutons Plein écran et Fermer en haut.
 class PlayerScreen extends StatefulWidget {
   final Channel channel;
   final bool isFavorite;
@@ -1126,6 +1173,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   late VlcPlayerController _vlcViewController;
   bool _isPlaying = true;
   bool _hasError = false;
+  bool _isFullscreen = false;
   late bool _favState;
   String _statusText = 'Connexion au flux...';
 
@@ -1134,7 +1182,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.initState();
     _favState = widget.isFavorite;
 
-    // Configuration VLC avec accélération matérielle complète et options anti-403
+    // Initialisation VLC avec User-Agent, Referer et accélération matérielle
     _vlcViewController = VlcPlayerController.network(
       widget.channel.url,
       hwAcc: HwAcc.full,
@@ -1166,7 +1214,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       if (value.hasError) {
         _statusText = 'Erreur lors de la lecture du flux';
       } else if (value.isPlaying) {
-        _statusText = widget.channel.isRadio ? 'Diffusion Radio en direct' : 'En direct';
+        _statusText = widget.channel.isRadio ? 'Radio en direct' : 'En direct';
       } else if (value.isBuffering) {
         _statusText = 'Mise en mémoire tampon...';
       } else {
@@ -1180,6 +1228,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _vlcViewController.removeListener(_onVlcStatusChange);
     _vlcViewController.stopRendererScanning();
     _vlcViewController.dispose();
+
+    // Restaurer l'interface normale et orientation
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     super.dispose();
   }
 
@@ -1196,51 +1253,127 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _vlcViewController.play();
   }
 
+  void _toggleFullscreen() {
+    setState(() {
+      _isFullscreen = !_isFullscreen;
+    });
+
+    if (_isFullscreen) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.85),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.channel.name,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (widget.channel.group != null)
-              Text(
-                widget.channel.group!,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF22D3EE)),
-              ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _favState ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: _favState ? const Color(0xFF22D3EE) : Colors.white70,
-            ),
-            onPressed: () {
-              widget.onToggleFavorite();
-              setState(() {
-                _favState = !_favState;
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white70),
-            tooltip: 'Recharger le flux',
-            onPressed: _restartStream,
-          ),
-        ],
-      ),
       body: SafeArea(
+        top: !_isFullscreen,
+        bottom: !_isFullscreen,
         child: Column(
           children: [
+            // Barre supérieure avec boutons Plein écran et Fermer
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              color: const Color(0xFF060B18).withOpacity(0.95),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.channel.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF1F5F9),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (widget.channel.group != null && widget.channel.group!.isNotEmpty)
+                          Text(
+                            widget.channel.group!,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF22D3EE)),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Bouton Cœur
+                  IconButton(
+                    icon: Icon(
+                      _favState ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: _favState ? const Color(0xFF22D3EE) : const Color(0xFF8B97AD),
+                      size: 22,
+                    ),
+                    onPressed: () {
+                      widget.onToggleFavorite();
+                      setState(() {
+                        _favState = !_favState;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  // Bouton Plein écran
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF22D3EE),
+                      backgroundColor: const Color(0xFF1E2636),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF26304A)),
+                      ),
+                    ),
+                    icon: Icon(
+                      _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _isFullscreen ? 'Fenêtré' : 'Plein écran',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _toggleFullscreen,
+                  ),
+                  const SizedBox(width: 8),
+                  // Bouton Fermer
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF060B18),
+                      backgroundColor: const Color(0xFFE8EEFB),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF060B18)),
+                    label: const Text(
+                      'Fermer',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF060B18),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Zone de visualisation du lecteur VLC
             Expanded(
               child: Stack(
                 alignment: Alignment.center,
@@ -1251,16 +1384,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                width: 120,
-                                height: 120,
+                                width: 110,
+                                height: 110,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF151B28),
                                   shape: BoxShape.circle,
                                   border: Border.all(color: const Color(0xFF22D3EE), width: 2),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF22D3EE).withOpacity(0.3),
-                                      blurRadius: 24,
+                                      color: const Color(0xFF22D3EE).withOpacity(0.35),
+                                      blurRadius: 26,
                                       spreadRadius: 4,
                                     ),
                                   ],
@@ -1270,39 +1403,38 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                       ? ClipOval(
                                           child: Image.network(
                                             widget.channel.logo!,
-                                            width: 100,
-                                            height: 100,
+                                            width: 90,
+                                            height: 90,
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) => const Icon(
                                               Icons.radio_rounded,
-                                              size: 60,
+                                              size: 54,
                                               color: Color(0xFF22D3EE),
                                             ),
                                           ),
                                         )
                                       : const Icon(
                                           Icons.radio_rounded,
-                                          size: 60,
+                                          size: 54,
                                           color: Color(0xFF22D3EE),
                                         ),
                                 ),
                               ),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 20),
                               Text(
                                 widget.channel.name,
                                 style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 19,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Color(0xFFF1F5F9),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               Text(
                                 widget.channel.group ?? 'Flux audio en direct',
                                 style: const TextStyle(color: Color(0xFF8B97AD), fontSize: 13),
                               ),
-                              // VLC Player invisible ou minimal en arrière plan audio
                               Opacity(
                                 opacity: 0.01,
                                 child: SizedBox(
@@ -1328,7 +1460,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                   SizedBox(height: 16),
                                   Text(
                                     'Chargement du flux vidéo VLC...',
-                                    style: TextStyle(color: Colors.white70),
+                                    style: TextStyle(color: Color(0xFF8B97AD)),
                                   ),
                                 ],
                               ),
@@ -1342,7 +1474,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 48),
                           const SizedBox(height: 12),
                           const Text(
                             'Impossible de lire ce flux',
@@ -1357,7 +1489,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             widget.channel.url,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              color: Colors.white60,
+                              color: Color(0xFF8B97AD),
                               fontSize: 12,
                             ),
                             maxLines: 2,
@@ -1366,7 +1498,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             onPressed: _restartStream,
-                            icon: const Icon(Icons.refresh, color: Color(0xFF060B18)),
+                            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF060B18)),
                             label: const Text(
                               'Réessayer',
                               style: TextStyle(color: Color(0xFF060B18), fontWeight: FontWeight.bold),
@@ -1381,9 +1513,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ],
               ),
             ),
+            // Barre de commandes inférieure
             Container(
-              color: const Color(0xFF0B1220),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: const Color(0xFF060B18),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Column(
                 children: [
                   Row(
@@ -1402,7 +1535,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       Text(
                         _statusText,
                         style: const TextStyle(
-                          color: Colors.white70,
+                          color: Color(0xFF8B97AD),
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1418,12 +1551,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.replay_10, color: Colors.white),
+                        icon: const Icon(Icons.replay_10_rounded, color: Colors.white),
                         onPressed: () async {
                           final pos = await _vlcViewController.getPosition();
                           _vlcViewController.setTime(
@@ -1440,14 +1573,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         onPressed: _togglePlayPause,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.forward_10, color: Colors.white),
+                        icon: const Icon(Icons.forward_10_rounded, color: Colors.white),
                         onPressed: () async {
                           final pos = await _vlcViewController.getPosition();
                           _vlcViewController.setTime(pos.inMilliseconds + 10000);
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.refresh, color: Colors.white70),
+                        icon: const Icon(Icons.refresh_rounded, color: Color(0xFF8B97AD)),
                         tooltip: 'Recharger',
                         onPressed: _restartStream,
                       ),
