@@ -9,5 +9,7 @@ dependencies:
   flutter_vlc_player: ^7.4.1
   http: ^1.1.0
   permission_handler: ^11.0.1
+  shared_preferences: ^2.2.2
+
 flutter:
   uses-material-design: true
