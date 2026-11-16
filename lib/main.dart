@@ -500,10 +500,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ':http-referrer=https://www.google.com/',
           ':http-reconnect=true',
         ]),
-        options: [
-          '--http-user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-          '--http-referrer=https://www.google.com/',
-        ],
       ),
     );
 
