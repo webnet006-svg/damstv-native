@@ -1,0 +1,13 @@
+name: damstv_native
+description: DAMS TV Native
+version: 1.0.0+1
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_vlc_player: ^7.4.1
+  http: ^1.1.0
+  permission_handler: ^11.0.1
+flutter:
+  uses-material-design: true
